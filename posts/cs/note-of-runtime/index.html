@@ -1,0 +1,25 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><title>关于Runtime的一些笔记 | michael's space</title><link rel=stylesheet href=/css/reset.css><link rel=stylesheet href=/css/font.css><link rel=stylesheet href=/css/smigle.css><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"></head><body><header><div id=brand><a class=icon-link href=https://michaelchan.space><img class=icon src=/images/avatar.jpg></a><div class=text><a href=https://michaelchan.space><h1>michael's space</h1></a><h3>Welcome to my space 👋</h3></div></div><nav><a href=/><b>Home</b></a>
+|
+<a href=/posts/><b>Posts</b></a>
+|
+<a href=/categories/><b>Categories</b></a>
+|
+<a href=/tags/><b>Tags</b></a>
+|
+<a href=/about/><b>About</b></a></nav><hr></header><div id=content><main><article><h1>关于Runtime的一些笔记</h1><div class=post-meta><strong><span>Posted on</span>
+<time>2020-05-04</time>
+<span>in</span>
+<a href=/categories/cs>cs</a></strong>
+<span>• 34 words</span>
+<span>• 1 minute read</span><div><span>Tags:</span>
+<a href=/tags/note>note</a></div></div><div><p>前几日学前端的室友问我到底什么是Runtime，我随口回答到就是运行时呗。他又追问那什么是运行时，我答道就是你那段程序运行时所需要的一切，比如一段js在浏览器中被解释执行，这个浏览器就可以看成运行时，它提供了js中网络请求，操作文档树等能力。室友回道就这，你直接说v8我就懂了，还弄什么运行时这些名词。现在想来我的回答还是有些片面。</p><h2 id=什么是运行时>什么是运行时?</h2><p>运行时是<strong>一段实现编程语言执行模型的代码</strong>，它允许程序与其所需的计算资源进行交互。运行时通常是编程语言的重要组成部分，无需单独安装。</p><p>运行时也指<strong>程序正在运行的时候</strong>，即当你在计算机上启动一个程序时，对于该程序来说就是运行时。在一些编程语言中，某些可重复使用的程序会作为「运行时库」构建和打包。这些例程可以在程序运行时链接和使用。</p><p>程序员有时会区分在编译程序时嵌入到程序中的内容和在<strong>运行时嵌入或使用的内容</strong>，前者有时称为<code>编译时</code>。</p><h2 id=运行时如何工作>运行时如何工作？</h2><p>运行时是编程生命周期的一个阶段。这是程序与执行所需的所有外部指令一起运行的时间。其中一些外部指令称为<code>运行时系统</code>或<code>运行时环境</code>，是编程语言的重要组成部分。</p><p>运行时系统在操作系统（OS）上创建一个层，该层包含处理使主程序运行所需任务的其他程序。这些其他程序处理的任务包括为主程序分配内存和调度。</p><p>当应用程序处于运行时阶段时，程序的可执行文件和程序引用的任何文件将加载到RAM中。这些可能包括用户未编写但在后台运行以使程序运行的代码。该代码被发送到计算机的处理器以转换为机器代码。然后使硬件运行该程序。这也是<a href=https://en.wikipedia.org/wiki/Program_lifecycle_phase>程序声明周期</a>的最后阶段，分别是编辑时(edit time)，编译时(compile time)，链接时(link time)，分发时(distribution time)，安装时(intallation time)，装载时(load time)，运行时(run time)。</p><h2 id=运行时错误>运行时错误</h2><p>运行时错误这个词在运行软件时很常见。这是指由于任何损坏、丢失或不兼容的组件，程序无法在运行时执行的问题。</p><p>运行时错误可能有很多原因，比如：</p><ul><li>系统资源不足。系统资源不足可能导致运行时错误。例如，如果程序运行所需的内存不足，运行时环境将无法完成其工作。该程序可能会中止并返回错误消息。</li><li>编码错误。软件中的bug可能导致运行时错误。</li><li>依赖中断。如果程序需要执行的另一个应用程序的连接中断，则可能会导致错误。</li></ul><p>运行时环境通常会显示一个通知，说明程序崩溃的原因或错误发生的位置。程序员可能需要调试软件，手动调试或使用调试工具，以找到运行时错误的根本原因。</p><h2 id=一些名词>一些名词</h2><p>在计算机科学中，运行时这个词有很多含义。它可以指程序的状态，某种类型的程序或程序运行的时间。当然还有其他含义：</p><ul><li><p>运行时系统</p><p>运行时系统是随编程语言一起提供的执行模型的一部分的软件。它创建了上面描述的层，该层位于包含帮助运行主程序的其他程序的操作系统之上。</p><p>运行时系统通常与运行时环境这个术语是同义的。运行时系统和运行时环境充当小型操作系统，为程序运行提供了所需的每个功能。</p></li><li><p>运行时环境</p><p>运行时环境是更广义的定义，是程序在其中执行的环境。在运行环境中，包括操作系统，硬件和内存。在 IT 操作中，更频繁地使用运行环境，而不是应用程序开发。运行时环境执行低级任务，包括并行执行、磁盘输入/输出、任务调度、垃圾回收或资源管理。它们也可以实现高级命令，如类型检查、调试和代码优化。</p></li><li><p>运行时库</p><p>运行时库是一组低级的、平台和编译器特定的例程，编译器使用它们向运行时环境发送指令，以使程序运行。</p></li></ul></div></article></main></div><footer><hr><p id=social>Find me around the web:<br><a href=https://github.com/konomichael>GitHub</a>
+|
+<a href=mailto:hi@michaelchan.space>Email</a></p><p class=copyright>Copyright © 2023
+<a href=https://michaelchan.space><strong>konomichael</strong></a>.
+This work is licensed under the
+<a href=http://creativecommons.org/licenses/by-sa/4.0/>CC BY-SA 4.0</a> license.</p><p class=builtWith>Built with
+<a href=http://www.gohugo.io/>Hugo</a>,
+using the theme
+<a href=https://gitlab.com/ian-s-mcb/smigle-hugo-theme>smigle</a>,
+which was influenced by the theme
+<a href=https://github.com/sumnerevans/smol>smol</a>.</p></footer></body></html>
