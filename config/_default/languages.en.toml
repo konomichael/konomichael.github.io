@@ -1,0 +1,14 @@
+# config/_default/languages.en.toml
+
+title = "michael's space"
+
+[author]
+name = "Michael Chan"
+image = "img/avatar.jpg"
+headline = "Software Developer"
+bio = ""
+links = [
+  { twitter = "https://twitter.com/konomichael_" },
+  { github = "https://github.com/konomichael"}
+]
+

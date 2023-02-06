@@ -1,0 +1,46 @@
+# config/_default/params.toml
+
+colorScheme = "blowfish"
+enableSearch = true
+enableCodeCopy = true
+logo = "img/logo.png"
+smartTOC = true
+smartTOCHideUnfocusedChildren = true
+defaultBackgroundImage = "img/bg.jpg"
+highlightCurrentMenuArea = true
+[homepage]
+  layout = "background"
+  showRecent = true
+  layoutBackgroundBlur = true
+[article]
+  showTableOfContents = true
+  showBreadcrumbs = true
+  showAuthor = true
+  showHero = true
+  heroStyle = "background" # valid options: basic, big, background, thumbAndBackground
+  layoutBackgroundBlur = true # only used when heroStyle equals background
+  showDraftLabel = true
+  seriesOpened = false
+  showHeadingAnchors = true
+  showPagination = true
+  invertPagination = false
+  showReadingTime = true
+  showTaxonomies = true 
+  showAuthorsBadges = true 
+  showWordCount = false
+  showSummary = true
+[taxonomy]
+  showTermCount = true
+  showHero = true
+  heroStyle = "background"
+[list]
+  showHero = true
+  heroStyle = "background" # valid options: basic, big, background, thumbAndBackground
+  layoutBackgroundBlur = true
+  showCards = true
+  cardView = true
+[term]
+  showHero = true
+  heroStyle = "background"
+  cardView = false
+  groupByYear = true
