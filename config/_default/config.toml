@@ -1,9 +1,0 @@
-# config/_default/config.toml
-
-baseURL = "https://your_domain.com/"
-languageCode = "zh-cn"
-
-[taxonomies]
-category = "categories"
-tag = "tags"
-series = "series"
