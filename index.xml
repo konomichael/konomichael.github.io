@@ -1,4 +1,147 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Michael's space</title><link>https://www.michaelchan.space/</link><description>Recent content on Michael's space</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Copyright © 2023 author Michael Chan</copyright><lastBuildDate>Mon, 27 Jul 2020 19:05:30 +0800</lastBuildDate><atom:link href="https://www.michaelchan.space/index.xml" rel="self" type="application/rss+xml"/><item><title>Quick Sort Elegant Implementation</title><link>https://www.michaelchan.space/posts/quick-sort-elegent-implementation/</link><pubDate>Mon, 27 Jul 2020 19:05:30 +0800</pubDate><guid>https://www.michaelchan.space/posts/quick-sort-elegent-implementation/</guid><description>This is a code snippet of my implementation of quicksort.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Michael's space</title><link>https://www.michaelchan.space/</link><description>Recent content on Michael's space</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Copyright © 2023 author Michael Chan</copyright><lastBuildDate>Mon, 24 Oct 2022 22:39:40 +0800</lastBuildDate><atom:link href="https://www.michaelchan.space/index.xml" rel="self" type="application/rss+xml"/><item><title>Understanding the Start Process of Hyperledger Chaincode</title><link>https://www.michaelchan.space/posts/understanding-the-start-process-of-hyperledger-chaincode/</link><pubDate>Mon, 24 Oct 2022 22:39:40 +0800</pubDate><guid>https://www.michaelchan.space/posts/understanding-the-start-process-of-hyperledger-chaincode/</guid><description>&lt;p>The topic at hand is &lt;code>User Chaincode (UCC)&lt;/code>, an essential component for application developers in the realm of blockchain technology. It provides the logic necessary to process states based on a distributed ledger, enabling developers to create complex applications.&lt;/p></description><content>&lt;p>The topic at hand is &lt;code>User Chaincode (UCC)&lt;/code>, an essential component for application developers in the realm of blockchain technology. It provides the logic necessary to process states based on a distributed ledger, enabling developers to create complex applications.&lt;/p>
+&lt;p>In the context of Hyperledger Fabric, Chaincode is typically executed within Docker containers. Peers utilize the Docker API to create and launch Chaincode containers. Once a Chaincode container is up and running, it establishes a bi-directional &lt;code>gRPC &lt;/code> connection with the Peer, enabling communication via the exchange of ChaincodeMessages. To initiate requests to the Peer, the Chaincode container utilizes the interface provided by the &lt;code>shim&lt;/code> package.&lt;/p>
+&lt;h2 id="the-typical-structure-of-chaincode">The typical structure of chaincode&lt;/h2>
+&lt;p>The typical structure of the chaincode is presented below. Users only need to focus on the implementation of the &lt;code>Init()&lt;/code> and &lt;code>Invoke()&lt;/code> functions and use the &lt;code>shim.ChaincodeStubInterface&lt;/code> structure in them to implement the interaction logic with the ledger.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">MyChaincode&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span>{}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">d&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">MyChaincode&lt;/span>) &lt;span style="color:#a6e22e">Init&lt;/span>(&lt;span style="color:#a6e22e">stub&lt;/span> &lt;span style="color:#a6e22e">shim&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeStubInterface&lt;/span>) &lt;span style="color:#a6e22e">peer&lt;/span>.&lt;span style="color:#a6e22e">Response&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">shim&lt;/span>.&lt;span style="color:#a6e22e">Success&lt;/span>(&lt;span style="color:#66d9ef">nil&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">d&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">MyChaincode&lt;/span>) &lt;span style="color:#a6e22e">Invoke&lt;/span>(&lt;span style="color:#a6e22e">stub&lt;/span> &lt;span style="color:#a6e22e">shim&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeStubInterface&lt;/span>) &lt;span style="color:#a6e22e">peer&lt;/span>.&lt;span style="color:#a6e22e">Response&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">shim&lt;/span>.&lt;span style="color:#a6e22e">Success&lt;/span>(&lt;span style="color:#66d9ef">nil&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>() {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">shim&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">MyChaincode&lt;/span>{})
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> panic(&lt;span style="color:#a6e22e">err&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="the-start-process">The start process&lt;/h2>
+&lt;p>In the &lt;code>main&lt;/code> function we called the &lt;code>shim.Start&lt;/code> to start a chaincode:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#a6e22e">cc&lt;/span> &lt;span style="color:#a6e22e">Chaincode&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">chaincodename&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">os&lt;/span>.&lt;span style="color:#a6e22e">Getenv&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;CORE_CHAINCODE_ID_NAME&amp;#34;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">chaincodename&lt;/span> &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">errors&lt;/span>.&lt;span style="color:#a6e22e">New&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;&amp;#39;CORE_CHAINCODE_ID_NAME&amp;#39; must be set&amp;#34;&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">streamGetter&lt;/span> &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">streamGetter&lt;/span> = &lt;span style="color:#a6e22e">userChaincodeStreamGetter&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">stream&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">streamGetter&lt;/span>(&lt;span style="color:#a6e22e">chaincodename&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">err&lt;/span> = &lt;span style="color:#a6e22e">chaincodeAsClientChat&lt;/span>(&lt;span style="color:#a6e22e">chaincodename&lt;/span>, &lt;span style="color:#a6e22e">stream&lt;/span>, &lt;span style="color:#a6e22e">cc&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The function first retrieves the value of the &lt;code>CORE_CHAINCODE_ID_NAME&lt;/code> in order to get a &lt;code>stream&lt;/code>, the implementation of the interface &lt;code>ClientStream&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">ClientStream&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">PeerChaincodeStream&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">CloseSend&lt;/span>() &lt;span style="color:#66d9ef">error&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>where &lt;code>PeerChaincodeStream&lt;/code> is the common stream interface for peer-chaincode communication(send &amp;amp; receive chaincode message ):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">PeerChaincodeStream&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">Send&lt;/span>(&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">pb&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeMessage&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">Recv&lt;/span>() (&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">pb&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeMessage&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The above stream interface is default implemented with &lt;code>gRPC&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">conn&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">internal&lt;/span>.&lt;span style="color:#a6e22e">NewClientConn&lt;/span>(&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">peerAddress&lt;/span>, &lt;span style="color:#a6e22e">conf&lt;/span>.&lt;span style="color:#a6e22e">TLS&lt;/span>, &lt;span style="color:#a6e22e">conf&lt;/span>.&lt;span style="color:#a6e22e">KaOpts&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">internal&lt;/span>.&lt;span style="color:#a6e22e">NewRegisterClient&lt;/span>(&lt;span style="color:#a6e22e">conn&lt;/span>)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>We first establish a gRPC connection to the peer given the &lt;code>peerAddress&lt;/code>, then we create a new stream for the client side:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">NewChaincodeSupportClient&lt;/span>(&lt;span style="color:#a6e22e">cc&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">grpc&lt;/span>.&lt;span style="color:#a6e22e">ClientConn&lt;/span>) &lt;span style="color:#a6e22e">ChaincodeSupportClient&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">chaincodeSupportClient&lt;/span>{&lt;span style="color:#a6e22e">cc&lt;/span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">c&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">chaincodeSupportClient&lt;/span>) &lt;span style="color:#a6e22e">Register&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span> &lt;span style="color:#a6e22e">context&lt;/span>.&lt;span style="color:#a6e22e">Context&lt;/span>, &lt;span style="color:#a6e22e">opts&lt;/span> &lt;span style="color:#f92672">...&lt;/span>&lt;span style="color:#a6e22e">grpc&lt;/span>.&lt;span style="color:#a6e22e">CallOption&lt;/span>) (&lt;span style="color:#a6e22e">ChaincodeSupport_RegisterClient&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">stream&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">c&lt;/span>.&lt;span style="color:#a6e22e">cc&lt;/span>.&lt;span style="color:#a6e22e">NewStream&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">_ChaincodeSupport_serviceDesc&lt;/span>.&lt;span style="color:#a6e22e">Streams&lt;/span>[&lt;span style="color:#ae81ff">0&lt;/span>], &lt;span style="color:#e6db74">&amp;#34;/protos.ChaincodeSupport/Register&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">opts&lt;/span>&lt;span style="color:#f92672">...&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">x&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">chaincodeSupportRegisterClient&lt;/span>{&lt;span style="color:#a6e22e">stream&lt;/span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">x&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>So here we can say that the stream is actually a streaming rpc.&lt;/p>
+&lt;h3 id="the-chaincode-side-handler">The chaincode side handler&lt;/h3>
+&lt;p>As what we will do next in web programming, we get conn via dialing to a server or listening to the port, we need a handler to process the data we accept from conn. We wrap the &lt;code>stream&lt;/code> and &lt;code>chaincode&lt;/code> into the &lt;code>handler&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Handler&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e">// serialLock is used to prevent concurrent calls to Send on the
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#75715e">// PeerChaincodeStream. This is required by gRPC.
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">serialLock&lt;/span> &lt;span style="color:#a6e22e">sync&lt;/span>.&lt;span style="color:#a6e22e">Mutex&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e">// chatStream is the client used to access the chaincode support server on
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#75715e">// the peer.
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">chatStream&lt;/span> &lt;span style="color:#a6e22e">PeerChaincodeStream&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e">// cc is the chaincode associated with this handler.
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">cc&lt;/span> &lt;span style="color:#a6e22e">Chaincode&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e">// state holds the current state of this handler.
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">state&lt;/span> &lt;span style="color:#a6e22e">state&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#75715e">// Multiple queries (and one transaction) with different txids can be executing in parallel for this chaincode
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#75715e">// responseChannels is the channel on which responses are communicated by the shim to the chaincodeStub.
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#75715e">// need lock to protect chaincode from attempting
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#75715e">// concurrent requests to the peer
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">responseChannelsMutex&lt;/span> &lt;span style="color:#a6e22e">sync&lt;/span>.&lt;span style="color:#a6e22e">Mutex&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">responseChannels&lt;/span> &lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#66d9ef">chan&lt;/span> &lt;span style="color:#a6e22e">pb&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeMessage&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After being initialized, the handler sends the first message to the peer to register the chaincode:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> = &lt;span style="color:#a6e22e">handler&lt;/span>.&lt;span style="color:#a6e22e">serialSend&lt;/span>(&lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">peerpb&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeMessage&lt;/span>{&lt;span style="color:#a6e22e">Type&lt;/span>: &lt;span style="color:#a6e22e">peerpb&lt;/span>.&lt;span style="color:#a6e22e">ChaincodeMessage_REGISTER&lt;/span>, &lt;span style="color:#a6e22e">Payload&lt;/span>: &lt;span style="color:#a6e22e">payload&lt;/span>}); &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Errorf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;error sending chaincode REGISTER: %s&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Upon successful registration, the chaincode starts a message processing loop, waiting to receive messages from the peer and messages about its own state transition.&lt;/p>
+&lt;p>The chaincode and the peer use the &lt;code>FSM(Finite State Machine)&lt;/code> to complete a series of response operations to messages:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>When the peer receives a &lt;code>ChaincodeMessage_REGISTER&lt;/code> message from the chaincode container, it registers the message to a local Handler structure and returns a &lt;code>ChaincodeMessage_REGISTERED&lt;/code> message to the Chaincode container. The peer then updates its status to &lt;code>established&lt;/code> and sends a &lt;code>ChaincodeMessage_READY&lt;/code> message to the chaincode side, updating its status to &lt;code>ready&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The chaincode side receives the &lt;code>ChaincodeMessage_REGISTERED&lt;/code> message and updates its status from &lt;code>created&lt;/code> to &lt;code>established&lt;/code>. Upon receiving the &lt;code>ChaincodeMessage_READY&lt;/code> message, it updates its status to &amp;lsquo;ready&amp;rsquo;.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>The peer sends a &lt;code>ChaincodeMessage_INIT&lt;/code> message to the Chaincode container to trigger chaincode initialization operations.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>When the chaincode container receives the &lt;code>ChaincodeMessage_INIT&lt;/code> message, it initializes the required &lt;code>ChaincodeStub&lt;/code> structure and calls the &lt;code>Init()&lt;/code> method in the chaincode code. After successful initialization, the chaincode container sends a &lt;code>ChaincodeMessage_COMPLETED&lt;/code> message to the peer, indicating that it is ready to be invoked.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>When the chaincode is invoked, the peer sends a &lt;code>ChaincodeMessage_TRANSACTION&lt;/code> message to the Chaincode.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Upon receiving this message, the Chaincode calls the &lt;code>Invoke()&lt;/code> method and sends messages, and based on the logic implemented by the user in the Invoke method, it can send messages such as&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_GET_HISTORY_FOR_KEY&lt;/code>,&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_GET_QUERY_RESULT&lt;/code>,&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_GET_STATE&lt;/code>,&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_GET_STATE_BY_RANGE&lt;/code>,&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_QUERY_STATE_CLOSE&lt;/code>,&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_QUERY_STATE_NEXT&lt;/code>,&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>ChaincodeMessage_INVOKE_CHAINCODE&lt;/code>&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>to the peer side. The peer processes these messages and responds with a &lt;code>ChaincodeMessage_RESPONSE&lt;/code> message. Finally, the chaincode replies with a &lt;code>ChaincodeMessage_COMPLETE&lt;/code> message to the Peer to indicate the completion of the call.&lt;/p>
+&lt;ul>
+&lt;li>During this process, the peer and chaincode sides periodically send &lt;code>ChaincodeMessage_KEEPALIVE&lt;/code> messages to each other to ensure that they remain connected.&lt;/li>
+&lt;/ul>
+&lt;p>Overall, this system enables communication between the chaincode and the peer using a set of standardized messages and a well-defined protocol, ensuring efficient and reliable interaction.&lt;/p>
+&lt;h2 id="summary">Summary&lt;/h2>
+&lt;p>In this post, we explored the starting process of the hyperledger chaincode side container. We learned that this process primarily involves establishing a gRPC connection (though other methods like lib-p2p can also be used) with the peer side, and then starting a message handler to process incoming messages. By understanding the chaincode startup process, we gain a deeper understanding of how hyperledger fabric works, which can help us develop more efficient and effective blockchain applications.&lt;/p></content></item><item><title>Quick Sort Elegant Implementation</title><link>https://www.michaelchan.space/posts/quick-sort-elegent-implementation/</link><pubDate>Mon, 27 Jul 2020 19:05:30 +0800</pubDate><guid>https://www.michaelchan.space/posts/quick-sort-elegent-implementation/</guid><description>This is a code snippet of my implementation of quicksort.
 func QuickSort(s Sortable) { quickSort(s, 0, s.Len()-1) } func quickSort(s Sortable, l, r int) { if l &amp;lt; r { p := partition(s, l, r) quickSort(s, l, p-1) quickSort(s, p+1, r) } } func partition(s Sortable, l, r int) int { randomIdx := l + rand.Intn(r-l+1) s.Swap(l, randomIdx) i, j := l+1, r for { for i &amp;lt;= j &amp;amp;&amp;amp; s.</description><content>&lt;p>This is a code snippet of my implementation of quicksort.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">QuickSort&lt;/span>(&lt;span style="color:#a6e22e">s&lt;/span> &lt;span style="color:#a6e22e">Sortable&lt;/span>) {
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">quickSort&lt;/span>(&lt;span style="color:#a6e22e">s&lt;/span>, &lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#a6e22e">s&lt;/span>.&lt;span style="color:#a6e22e">Len&lt;/span>()&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>)
