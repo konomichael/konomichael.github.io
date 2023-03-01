@@ -151,7 +151,7 @@ As the word `simulate` implies, this part will not change the ledger. To do the 
    }
    ```
 
-   1. We will first check the invocation and determines if, how, and to where that invocation should be routed. The function `CheckInvocation` returns the `chancodeID`, `chaincodeType`, and error. If the chaincode requires initialization, the `chaincodeType` will be `ChaincodeMessage_INIT`, otherwise `ChaincodeMessage_TRANSACTION`. Remember that we have talked about the `chaincodeType` in the [previous post](posts/understanding-the-start-process-of-hyperledger-chaincode/).
+   1. We will first check the invocation and determines if, how, and to where that invocation should be routed. The function `CheckInvocation` returns the `chancodeID`, `chaincodeType`, and error. If the chaincode requires initialization, the `chaincodeType` will be `ChaincodeMessage_INIT`, otherwise `ChaincodeMessage_TRANSACTION`. Remember that we have talked about the `chaincodeType` in the [previous post](/posts/understanding-the-start-process-of-hyperledger-chaincode/).
    2. We then call `Launch()` to create and launch chaincode runtime, and finally call `dockerClient.CreateContainer` to create a docker container.
    3. Once the container is created successfully, we call `execute` to run the chaincode. To do that, we first construct the `chaincodeMessage` with the `chaincodeType`, `payload`(which is the `input` we unmarshaled from the proposal), `txID`, `channelID` and then send it to chaincode via gRPC.
 
