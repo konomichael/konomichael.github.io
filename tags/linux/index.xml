@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Linux on Michael's space</title><link>https://www.michaelchan.space/tags/linux/</link><description>Recent content in Linux on Michael's space</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Copyright © 2023 author Michael Chan</copyright><lastBuildDate>Sat, 11 Mar 2023 14:28:53 +0800</lastBuildDate><atom:link href="https://www.michaelchan.space/tags/linux/index.xml" rel="self" type="application/rss+xml"/><item><title>Memo of Linux Kernel Bootstrap</title><link>https://www.michaelchan.space/posts/memo-of-linux-kernel-bootstrap/</link><pubDate>Sat, 11 Mar 2023 14:28:53 +0800</pubDate><guid>https://www.michaelchan.space/posts/memo-of-linux-kernel-bootstrap/</guid><description>&lt;p>I&amp;rsquo;m reading a book about Linux kernel &lt;code>0.11&lt;/code> recently, and this is a memo of what I&amp;rsquo;ve learned.&lt;/p></description><content>&lt;p>I&amp;rsquo;m reading a book about Linux kernel &lt;code>0.11&lt;/code> recently, and this is a memo of what I&amp;rsquo;ve learned.&lt;/p>
+&lt;h2 id="1-bios">1. BIOS&lt;/h2>
+&lt;p>The CPU runs in &lt;code>real mode&lt;/code> when it&amp;rsquo;s powered on: the &lt;code>CS&lt;/code> is &lt;code>0xFFFF&lt;/code>, &lt;code>IP&lt;/code> is &lt;code>0x0000&lt;/code>, &lt;code>CS:IP&lt;/code> points to the first instruction of the BIOS. The BIOS is stored in the ROM:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th style="text-align:center">Interrupt Vector Table&lt;/th>
+&lt;th style="text-align:center">BIOS Data&lt;/th>
+&lt;th style="text-align:center">&lt;/th>
+&lt;th style="text-align:center">Interrupt Service&lt;/th>
+&lt;th style="text-align:center">&amp;mdash;&amp;gt;&lt;/th>
+&lt;th style="text-align:center">BIOS Code&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td style="text-align:center">0x00000 - 0x003FF&lt;/td>
+&lt;td style="text-align:center">0x00400 - 0x004FF&lt;/td>
+&lt;td style="text-align:center">&lt;/td>
+&lt;td style="text-align:center">0x0E05B - 0x0FFFE&lt;/td>
+&lt;td style="text-align:center">&lt;/td>
+&lt;td style="text-align:center">0xFE000 - 0xFFFFF&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;ul>
+&lt;li>The &lt;code>CS&lt;/code> is &lt;code>0xFFFF&lt;/code>, &lt;code>IP&lt;/code> is &lt;code>0x0000&lt;/code>, &lt;code>CS:IP&lt;/code> is calculated as &lt;code>0xFFFF*16 + 0x0000 = 0xFFFF0&lt;/code>.&lt;/li>
+&lt;li>A Interrupt Vector comprises of 4 bytes: &lt;code>CS:IP&lt;/code>. And there are 256 Interrupt Vectors in the Interrupt Vector Table: &lt;code>0x0400/4 = 256&lt;/code>.&lt;/li>
+&lt;li>In read mode, the CPU can only access the first 1MB(&lt;code>0x00000-0xFFFFF&lt;/code>) of memory.&lt;/li>
+&lt;/ul>
+&lt;/blockquote>
+&lt;h2 id="2-loading-kernel">2. Loading Kernel&lt;/h2>
+&lt;h3 id="21-loading-boot-sector">2.1. Loading Boot Sector&lt;/h3>
+&lt;p>After the BIOS have finished &lt;code>POST(Power On Self Test)&lt;/code>, it interrupts with &lt;code>INT 0x19&lt;/code> to read the first sector of the boot disk into the memory at &lt;code>0x7C00&lt;/code>, where the code &lt;code>bootsec.s&lt;/code> is loaded to.&lt;/p>
+&lt;h3 id="22-loading-setup">2.2. Loading Setup&lt;/h3>
+&lt;p>The &lt;code>bootsec.s&lt;/code> first desins memory placement:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">SETUPLEN = 4
+BOOTSEG = 0x07C0
+INITSEG = 0x9000
+SETUPSEG = 0x9020
+SYSSEG = 0x1000
+ENDSEG = SYSSEG + SYSSIZE
+&lt;/code>&lt;/pre>&lt;p>Then it copys itself to &lt;code>0x9000:0x0000(INITSEG:0x0000)&lt;/code> and loads the &lt;code>setup.s&lt;/code> with the interrupt &lt;code>INT 0x13&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">load_setup:
+mov dx, #0x0000 ! drive 0, head 0
+mov cx, #0x0002 ! sector 2, track 0
+mov bx, #0x0200 ! address = 512, in INITSEG
+mov ax, #0x0200+SETUPLEN ! service 2, nr of sectors
+int 0x13 ! read it
+jnc ok_setup
+&lt;/code>&lt;/pre>&lt;p>The interrupt service &lt;code>INT 0x13&lt;/code> reads &lt;code>SETUPLEN&lt;/code> sectors at sector &lt;code>2&lt;/code> of the boot disk into the memory at &lt;code>INITSEG:0x0200&lt;/code>.&lt;/p>
+&lt;blockquote>
+&lt;ul>
+&lt;li>The high 8 bits of &lt;code>dx&lt;/code> is the drive number, and the low 8 bits is the head number.&lt;/li>
+&lt;li>The high 8 bits of &lt;code>cx&lt;/code> is the traack number, and the low 8 bits is the sector number.&lt;/li>
+&lt;li>The high 8 bits of &lt;code>ax&lt;/code> is the service number, and the low 8 bits is the number of sectors to read.&lt;/li>
+&lt;li>The &lt;code>es:bx&lt;/code> is the address to read the data into. We have set &lt;code>es = INITSEG&lt;/code> before.&lt;/li>
+&lt;/ul>
+&lt;/blockquote>
+&lt;p>The memory layout after the &lt;code>setup.s&lt;/code> is loaded:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th style="text-align:center">bootsec.s&lt;/th>
+&lt;th style="text-align:center">setup.s&lt;/th>
+&lt;th style="text-align:center">&amp;hellip;SP(Stack Pointer)&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td style="text-align:center">0x90000 - 0x901FF&lt;/td>
+&lt;td style="text-align:center">0x90200 - 0x903FF&lt;/td>
+&lt;td style="text-align:center">&amp;hellip;0xFF000&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="23-loading-system">2.3. Loading System&lt;/h3>
+&lt;p>The &lt;code>system&lt;/code> is then loaded into the memory at &lt;code>0x10000&lt;/code>, which reads 240 sectors after the &lt;code>setup&lt;/code> sector. After that, the root device is checked and it&amp;rsquo;s number is stored at &lt;code>INITSEG:508&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">org 508 ; 0x1FC
+root_dev dw ROOT_DEV ; the root device number is stored here, a word(2 bytes)
+boot_flag dw 0AA55h
+&lt;/code>&lt;/pre>&lt;blockquote>
+&lt;p>The number of the root device is calculated as &lt;code>major * 256 + minor&lt;/code>. The more details can be found &lt;a href="https://www.kernel.org/doc/Documentation/admin-guide/devices.txt">here&lt;/a>.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="24-jumping-to-setup">2.4. Jumping to Setup&lt;/h3>
+&lt;p>Then it jumps to the &lt;code>setup.s&lt;/code> with &lt;code>jmpi 0, SETUPSEG&lt;/code>, start extracting the machine information with interrupts. The informations and their memory addresses are listed below:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th style="text-align:center">Information&lt;/th>
+&lt;th style="text-align:center">Memory Address&lt;/th>
+&lt;th style="text-align:center">Interrupt&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td style="text-align:center">Cursor Position&lt;/td>
+&lt;td style="text-align:center">0x90000&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Extended Memory Size&lt;/td>
+&lt;td style="text-align:center">0x90002&lt;/td>
+&lt;td style="text-align:center">0x15&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Active Page&lt;/td>
+&lt;td style="text-align:center">0x90004&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Video Mode&lt;/td>
+&lt;td style="text-align:center">0x90006&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Number of Character Columns&lt;/td>
+&lt;td style="text-align:center">0x90007&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">??&lt;/td>
+&lt;td style="text-align:center">0x90008&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">EGA Memory&lt;/td>
+&lt;td style="text-align:center">0x9000A&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Color(Mono) Mode&lt;/td>
+&lt;td style="text-align:center">0x9000B&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Switch settings&lt;/td>
+&lt;td style="text-align:center">0x9000C&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Feature bits&lt;/td>
+&lt;td style="text-align:center">0x9000D&lt;/td>
+&lt;td style="text-align:center">0x10&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">1st Hard Disk Parameter Table&lt;/td>
+&lt;td style="text-align:center">0x90080&lt;/td>
+&lt;td style="text-align:center">the value of 0x41-0x45 interrupt vectors&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">2nd Hard Disk Parameter Table&lt;/td>
+&lt;td style="text-align:center">0x90090&lt;/td>
+&lt;td style="text-align:center">the value of 0x46-0x50 interrupt vectors&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">Root Device Number&lt;/td>
+&lt;td style="text-align:center">0x901FC&lt;/td>
+&lt;td style="text-align:center">stored when loading setup&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h2 id="3-preparing-for-protected-mode">3. Preparing for Protected Mode&lt;/h2>
+&lt;h3 id="31-closing-the-interrupt">3.1. Closing the Interrupt&lt;/h3>
+&lt;p>To close the interrupt, it first sets the &lt;code>IF(Interrupt Flag)&lt;/code> of the &lt;code>EFLAGS&lt;/code> to &lt;code>0&lt;/code> with the instruction: &lt;code>cli&lt;/code>. It then copies the kernel program at the &lt;code>0x10000&lt;/code> to the start of memory &lt;code>0x00000&lt;/code>, which overwrites the interrupt vector table and the BIOS data. The system can not deal with the interrupt anymore until it rebuilds the interrupt vector table, which is why the &lt;code>cli&lt;/code> is called before.&lt;/p>
+&lt;h3 id="32-setting-up-the-gdt-and-idt">3.2. Setting up the GDT and IDT&lt;/h3>
+&lt;p>In real mode, the CPU can access the physic address with &lt;code>DS:SI&lt;/code>, where the &lt;code>DS&lt;/code> stores &lt;code>segment base address&lt;/code> and the &lt;code>SI&lt;/code> stores &lt;code>offset&lt;/code>. And the segment address is calculated as &lt;code>DS*16 + SI&lt;/code>. However, in protected mode, the &lt;code>DS&lt;/code> stores the &lt;code>segment selector&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 15 2 1
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────────────────────────────────┬────┬────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Descriptor index │ TI │RPL │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└─────────────────────────────────────────────────────────────────────┴────┴────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>TI&lt;/code> is the &lt;code>Table Indicator&lt;/code>, which is &lt;code>0&lt;/code> for the &lt;code>GDT&lt;/code> and &lt;code>1&lt;/code> for the &lt;code>LDT&lt;/code>. The &lt;code>RPL&lt;/code> is the &lt;code>Requestor Privilege Level&lt;/code>, which is the privilege level of the segment. A &lt;code>Segment Descriptor&lt;/code> can be accessed in the &lt;code>GDT&lt;/code> or &lt;code>LDT&lt;/code> with the &lt;code>index&lt;/code> and the &lt;code>TI&lt;/code>.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 31 23 22 21 20 19 15 14 12 11 7
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌────────────────┬──┬──┬──┬──┬────────────┬──┬────┬──┬─────────┬────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Base address │ │D │ │A │ Segment │ │ D │ │ │ Base address │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ 31 - 24 │G │/ │0 │V │ limit │P │ P │S │ Type │ 23 - 16 │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ │ │B │ │L │ 19-16 │ │ L │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└────────────────┴──┴──┴──┴──┴────────────┴──┴────┴──┴─────────┴────────────────┘
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────┬─────────────────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Base address 15 - 0 │ Segment limit 15 - 0 │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└─────────────────────────────────────────┴─────────────────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The base address can be extracted from the descriptor, and the physics address is calculated as &lt;code>base address + offset&lt;/code>.&lt;/p>
+&lt;p>The &lt;code>GDT(Global Descriptor Table)&lt;/code> is stored in the memory, can be accessed by the &lt;code>GDTR(Global Descriptor Table Register)&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 47 15
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌────────────────────────────────────────────────────┬────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Offset(liner address of GDT) │ table size │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└────────────────────────────────────────────────────┴────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>setup.s&lt;/code> declares a &lt;code>GDT&lt;/code> with 256 entries and sets the &lt;code>GDTR&lt;/code> to point to it:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">lgdt gdt_48
+gdt_48:
+.word 0x800 ; gdt limit=2048, 256 GDT entries, a descriptor is 8 bytes
+.word 512+gdt,0x9 ; gdt base = 0X9xxxx
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>gdt&lt;/code> is defined as:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">gdt:
+.word 0,0,0,0 ; dummy
+.word 0x07FF ; 8Mb - limit=2047
+.word 0x0000 ; base address=0
+.word 0x9A00 ; code read/exec
+.word 0x00C0 ; granularity=4096, 386
+.word 0x07FF ; 8Mb - limit=2047
+.word 0x0000 ; base address=0
+.word 0x9200 ; data read/write
+.word 0x00C0 ; granularity=4096, 386
+&lt;/code>&lt;/pre>&lt;p>There&amp;rsquo;re 3 descriptors in the &lt;code>GDT&lt;/code>, the first is empty, the second is for the code segment and the third is for the data segment.
+Explanation of the second descriptor:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 31 23 22 21 20 19 15 14 12 11 7
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌────────────────┬──┬──┬──┬──┬────────────┬──┬────┬──┬─────────┬────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ 0x00 │1 │1 │0 │0 │ 0x0 │1 │ 00 │1 │ 1010 │ 0x00 │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└────────────────┴──┴──┴──┴──┴────────────┴──┴────┴──┴─────────┴────────────────┘
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────┬─────────────────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ 0x0000 │ 0x07FF │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└─────────────────────────────────────────┴─────────────────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
+&lt;li>&lt;code>limit(0-15)&lt;/code>: &lt;code>0x07FF&lt;/code>&lt;/li>
+&lt;li>&lt;code>base address(0-15)&lt;/code>: &lt;code>0x0000&lt;/code>&lt;/li>
+&lt;li>&lt;code>base address(16-23)&lt;/code>: &lt;code>0x00&lt;/code>&lt;/li>
+&lt;li>&lt;code>S&lt;/code>: &lt;code>1&lt;/code> for code/data segment&lt;/li>
+&lt;li>&lt;code>Type&lt;/code>: &lt;code>1010&lt;/code> for code segment, execute/read,&lt;/li>
+&lt;li>&lt;code>DPL&lt;/code>: &lt;code>00&lt;/code> for kernel code/data segment, ring 0&lt;/li>
+&lt;li>&lt;code>P&lt;/code>: &lt;code>1&lt;/code> for present&lt;/li>
+&lt;li>&lt;code>limit(16-19)&lt;/code>: &lt;code>0x0&lt;/code>&lt;/li>
+&lt;li>&lt;code>AVL&lt;/code>: &lt;code>0&lt;/code>, available for system software&lt;/li>
+&lt;li>&lt;code>D/B&lt;/code>: &lt;code>1&lt;/code> for 32-bit segment&lt;/li>
+&lt;li>&lt;code>G&lt;/code>: &lt;code>1&lt;/code> for granularity 4KB, the limit then leads to &lt;code>[0x07FF(FFF)+1] Bytes = 8MB&lt;/code>&lt;/li>
+&lt;li>&lt;code>base address(24-31)&lt;/code>: &lt;code>0x00&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>The third descriptor is similar to the second one, except the &lt;code>Type&lt;/code> is &lt;code>1001&lt;/code> for data segment, read/write.&lt;/p>
+&lt;p>The &lt;code>IDT(Interrupt Descriptor Table)&lt;/code> is also stored in the memory, can be accessed by the &lt;code>IDTR(Interrupt Descriptor Table Register)&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 47 15
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌────────────────────────────────────────────────────┬────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Offset(liner address of IDT) │ table size │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└────────────────────────────────────────────────────┴────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>setup.s&lt;/code> declares an empty &lt;code>IDT&lt;/code> with 256 entries and sets the &lt;code>IDTR&lt;/code> to point to it:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">lidt idt_48
+idt_48:
+.word 0
+.word 0,0
+&lt;/code>&lt;/pre>&lt;p>It&amp;rsquo;s ok to have an empty &lt;code>IDT&lt;/code> at the beginning because the interrupt is not enabled yet.&lt;/p>
+&lt;h3 id="32-turning-on-a20-address-line">3.2. Turning on A20 Address Line&lt;/h3>
+&lt;p>The &lt;code>8086&lt;/code> CPU can address up to &lt;code>0xFFFFF&lt;/code>, which is &lt;code>1MB&lt;/code>. Turning on the &lt;code>A20&lt;/code> line allows the CPU to address up to &lt;code>0xFFFFFFFF&lt;/code>, which is &lt;code>4GB&lt;/code>. The more detail of &lt;code>A20&lt;/code> line can be found in &lt;a href="https://en.wikipedia.org/wiki/A20_line">this article&lt;/a>.&lt;/p>
+&lt;h3 id="33-switch-to-protected-mode">3.3 Switch to Protected Mode&lt;/h3>
+&lt;p>The &lt;code>setup.s&lt;/code> switches to the protected mode by setting the &lt;code>CR0&lt;/code> register:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">mov ax,#0x0001 ; protected mode (PE) bit
+lmsw ax ; This is it;
+jmpi 0,8 ; jmp offset 0 of segment 8 (cs)
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>lmsw&lt;/code> instruction loads the &lt;code>ax&lt;/code> to the &lt;code>CR0&lt;/code> register, and the &lt;code>jmpi&lt;/code> instruction jumps to the &lt;code>0x8:0x0&lt;/code> address. The index of segment descriptor can be extract from the segment selector: &lt;code>0x8&amp;gt;&amp;gt;3=0x1&lt;/code>, which is the index of the second descriptor in the &lt;code>GDT&lt;/code>. The &lt;code>0x0&lt;/code> is the offset of the segment. As the section 3.1, the &lt;code>base address&lt;/code> of the second descriptor is &lt;code>0x0000&lt;/code>, so the &lt;code>0x8:0x0&lt;/code> address is &lt;code>0x0000&lt;/code>, which points to the &lt;code>head.s&lt;/code> loaded before.&lt;/p>
+&lt;h2 id="35-executing-heads">3.5 Executing head.s&lt;/h2>
+&lt;p>The &lt;code>head.s&lt;/code> starts with:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">_pg_dir:
+_startup_32:
+mov eax,0x10
+mov ds,ax
+mov es,ax
+mov fs,ax
+mov gs,ax
+lss esp,_stack_start
+&lt;/code>&lt;/pre>&lt;p>The segment registers are set to &lt;code>0x10 (0x10&amp;gt;&amp;gt;3=2)&lt;/code>, which is the index of the third descriptor in the &lt;code>GDT&lt;/code>, the data segment. The &lt;code>lss esp,_stack_start&lt;/code> changes the stack pointer(which is currently &lt;code>0x9FF00&lt;/code>).&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>stack_start &lt;span style="color:#f92672">=&lt;/span> {&lt;span style="color:#f92672">&amp;amp;&lt;/span>user_stack[PAGE_SIZE &lt;span style="color:#f92672">&amp;gt;&amp;gt;&lt;/span> &lt;span style="color:#ae81ff">2&lt;/span>], &lt;span style="color:#ae81ff">0x10&lt;/span>};
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;blockquote>
+&lt;p>lss is &lt;code>Load Segment Instruction&lt;/code>, which loads the lower word of the given value in memory to the specified register(here is &lt;code>esp&lt;/code>), and the upper word to the stack segment register(&lt;code>ss&lt;/code>). Here, &lt;code>0x10&lt;/code> is loaded to &lt;code>ss&lt;/code>, and the &lt;code>user_stack&lt;/code> address is loaded to &lt;code>esp&lt;/code>.&lt;/p>
+&lt;/blockquote>
+&lt;p>It then call &lt;code>setup_idt&lt;/code> to setup the &lt;code>IDT&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">setup_idt:
+lea edx,ignore_int
+mov eax,00080000h
+mov ax,dx
+mov dx,8E00h
+lea edi,_idt
+mov ecx,256
+rp_sidt:
+mov [edi],eax
+mov [edi+4],edx
+add edi,8
+dec ecx
+jne rp_sidt
+lidt fword ptr idt_descr
+ret
+idt_descr:
+dw 256*8-1
+dd _idt
+_idt:
+DQ 256 dup(0)
+&lt;/code>&lt;/pre>&lt;p>It initializes a 256-entry &lt;code>IDT(Interrupt Descriptor Table)&lt;/code> with the default &lt;code>ignore_int&lt;/code> handler. An &lt;code>ID(Interruption Descriptor)&lt;/code> is represented by 8 bytes:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 31 15 14 12 11 7 4
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌──────────────────────────────────────────┬──┬────┬──┬─────────┬─────┬─────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Offset(31-16) │P │ DPL│0 │ Type │0 0 0│ Unused │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└──────────────────────────────────────────┴──┴────┴──┴─────────┴─────┴─────────┘
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌──────────────────────────────────────────┬────────────────────────────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Selector │ Offset(15-0) │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└──────────────────────────────────────────┴────────────────────────────────────┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The &lt;code>0x8e00&lt;/code> is set to the &lt;code>32-47&lt;/code> bits of the descriptor, which means:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>P&lt;/code>: &lt;code>1&lt;/code> for present&lt;/li>
+&lt;li>&lt;code>DPL&lt;/code>: &lt;code>00&lt;/code> for kernel code/data segment, ring 0&lt;/li>
+&lt;li>&lt;code>Type&lt;/code>: &lt;code>1110&lt;/code> for interrupt gate, which means the interrupt is handled by the &lt;code>interrupt handler&lt;/code> in the &lt;code>IDT&lt;/code> entry.&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>A gate (call, interrupt, task or trap) is used to transfer control of execution across segments. Privilege level checking is done differently depending on the type of destination and instruction used.
+&amp;ndash; &lt;a href="https://stackoverflow.com/questions/3425085/the-difference-between-call-gate-interrupt-gate-trap-gate">stackoverflow&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>The &lt;code>GPT&lt;/code> is then rebuilt since the older one was built to address the &lt;code>header.s&lt;/code> code after entrying the protected mode, and it&amp;rsquo;s not safe anymore(may be overwritten). The new one is just like the old one:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">_gdt:
+DQ 0000000000000000h ;/* NULL descriptor */
+DQ 00c09a0000000fffh ;/* 16Mb */
+DQ 00c0920000000fffh ;/* 16Mb */
+DQ 0000000000000000h ;/* TEMPORARY - don&amp;#39;t use */
+DQ 252 dup(0)
+&lt;/code>&lt;/pre>&lt;blockquote>
+&lt;p>Note: In litle endian, the &lt;code>0x00c09a0000000fffh&lt;/code> leads to the &lt;code>limit=0x0fff&lt;/code>, which means the segment can address &lt;code>0x0ffffff+1=16M&lt;/code> bytes.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="36-enabling-paging">3.6. Enabling Paging&lt;/h3>
+&lt;p>The &lt;code>header.s&lt;/code> is going to do the last work before jumping to the &lt;code>main&lt;/code> function: enabling paging.&lt;/p>
+&lt;p>When enabling paging, the linear address, &lt;code>SegmentSelector:Offset&lt;/code>, is translated to the physical address by the following steps:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;ol>
+&lt;li>The &lt;code>SegmentSelector&lt;/code> is used to index the &lt;code>GDT&lt;/code> to get the &lt;code>SegmentDescriptor&lt;/code>, which contains the &lt;code>base address&lt;/code> of the segment.&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>
+&lt;ol start="2">
+&lt;li>The &lt;code>Offset&lt;/code> is added to the &lt;code>base address&lt;/code> to get the &lt;code>linear address&lt;/code>.&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>
+&lt;ol start="3">
+&lt;li>The linear address is translated to the physical address by the &lt;code>MMU(Memory Management Unit)&lt;/code> according to the &lt;code>Page Table&lt;/code> in the &lt;code>Page Directory&lt;/code>.&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 11 21
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌──────────┬──────────┬────────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│0000000011│0100000000│000000000100│
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└───┬──────┴─┬────────┴───┬────────┘
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ ┌────────┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ └─────►│ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ 3. Add the ├────────┤◄───┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ offset │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ ├────────┤ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ PT 3 │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ └──────────────────►│ ├────┘
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ 2.Lookup for 256th├────────┤ 0x4000◄──┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ entry in PT 3 │ PT 2 │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ ├────────┤ 0x3000 │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ PT 1 │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ ├────────┤ 0x2000 │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ PT 0 │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ │ │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> │ ├────────┤ 0x1000 │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> └───────────────────────────►│ PD ├──────────┘
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> 1.Lookup for the 3rd │ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> entry in PD └────────┘ 0
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> Memory
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>To enable paging, it first executes the following code:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">jmp after_page_tables
+...
+after_page_tables:
+push 0
+push 0
+push 0
+push L6
+push _main
+jmp setup_paging
+L6:
+jmp L6
+&lt;/code>&lt;/pre>&lt;p>it push 3 &lt;code>0&lt;/code>s to the stack, which are the parameters to &lt;code>main&lt;/code>. Then it pushes the &lt;code>L6&lt;/code> label address to the stack, will endlessly transfer the program&amp;rsquo;s execution flow to the &lt;code>L6&lt;/code> until the program is interrupted or stopped.&lt;/p>
+&lt;p>It then jumps to &lt;code>setup_paging&lt;/code> to create the &lt;code>Page Directory&lt;/code> and &lt;code>Page Tables&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">setup_paging:
+mov ecx,1024*5
+xor eax,eax
+xor edi,edi
+pushf
+cld
+rep stosd
+mov eax,_pg_dir
+mov [eax],pg0+7
+mov [eax+4],pg1+7
+mov [eax+8],pg2+7
+mov [eax+12],pg3+7
+mov edi,pg3+4092
+mov eax,00fff007h
+std
+L3: stosd
+sub eax,00001000h
+jge L3
+popf
+&lt;/code>&lt;/pre>&lt;p>The &lt;code>PDE/PTE&lt;/code> is a 32-bit value:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 31 11 7 4
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────────────────┬─────┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Page Table Address (20 bits) PDE/ │ │ │ │ │ │ │P│P│U│R│ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ │AVL │G│0│D│A│G│C│W│ │ │P│
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Page Address (20 bits) PTE │ │ │ │ │ │ │D│T│S│W│ │
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>└─────────────────────────────────────────────────────┴─────┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After building PDEs and PTEs, it sets the &lt;code>CR3&lt;/code> register to the &lt;code>Page Directory&lt;/code>&amp;rsquo;s physical address:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">xor eax,eax
+mov cr3,eax
+&lt;/code>&lt;/pre>&lt;p>which is &lt;code>0&lt;/code> since the &lt;code>Page Directory&lt;/code> is at the beginning of the memory.
+It then enable the paging by setting the &lt;code>CR0.PG&lt;/code> bit to &lt;code>1&lt;/code>:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">mov eax,cr0
+or eax,80000000h
+mov cr0,eax
+&lt;/code>&lt;/pre>&lt;p>The paging is enabled now, the final step is to jump to the &lt;code>main&lt;/code> function:&lt;/p>
+&lt;pre tabindex="0">&lt;code class="language-assembly" data-lang="assembly">ret
+&lt;/code>&lt;/pre>&lt;p>which pops the value from the stack to the &lt;code>EIP&lt;/code> register, which is just &lt;code>main&lt;/code>&amp;rsquo;s address. And the &lt;code>CS&lt;/code> register holds &lt;code>0x8&lt;/code>(after switching to protected mode, &lt;code>jmpi 0,8&lt;/code> is called), which points to the &lt;code>GDT&lt;/code>&amp;rsquo;s second entry, code segment descriptor.&lt;/p>
+&lt;h2 id="summary">Summary&lt;/h2>
+&lt;p>This post records how to switch to the protected mode and enable paging. Now that the protected mode is enabled, the &lt;code>GDT&lt;/code> is built to make it possible to use the &lt;code>SegmentSelector:Offset&lt;/code> to address the memory in linear address space. The &lt;code>Page Directory&lt;/code> and &lt;code>Page Tables&lt;/code> are built to translate the linear address to the physical address.&lt;/p></content></item></channel></rss>
