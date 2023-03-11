@@ -401,7 +401,7 @@ sub eax,00001000h
 jge L3
 popf
 &lt;/code>&lt;/pre>&lt;p>The &lt;code>PDE/PTE&lt;/code> is a 32-bit value:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 31 11 7 4
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span> 31 11 9
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>┌─────────────────────────────────────────────────────┬─────┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ Page Table Address (20 bits) PDE/ │ │ │ │ │ │ │P│P│U│R│ │
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>│ │AVL │G│0│D│A│G│C│W│ │ │P│
